@@ -1,0 +1,5 @@
+{
+    "ERR_CODE_NULL": "Null-Value",
+    "ERR_CODE_INVALID_ARGUMENT": "Invalid-Argument",
+    "ERR_CODE_INTERNAL": "Internal"
+}
