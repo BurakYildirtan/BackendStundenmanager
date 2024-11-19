@@ -1,5 +1,8 @@
 {
     "ERR_CODE_NULL": "Null-Value",
     "ERR_CODE_INVALID_ARGUMENT": "Invalid-Argument",
-    "ERR_CODE_INTERNAL": "Internal"
+    "ERR_CODE_INTERNAL": "Internal",
+    "COLLECTION_USERS": "users",
+    "COLLECTION_SESSION": "sessions",
+    "ERRO_CODE_SESSION_EXISTS":"Session-Exist"
 }

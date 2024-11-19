@@ -17,28 +17,28 @@ exports.createUser = onCall(async (request) => {
         const errStr = "";
 
         const email = request.data.email;
-        if(!isEmailValid) errStr += "email is not valid.";
+        if(!isEmailValid(email)) errStr += "email is not valid.";
 
         const password = request.data.password;
-        if(!isPasswordValid)  errStr += "password is not valid.";
+        if(!isPasswordValid(password))  errStr += "password is not valid.";
 
         const name = request.data.name;
-        if(!isNameValid)  errStr += "name is not valid.";
+        if(!isNameValid(name))  errStr += "name is not valid.";
 
         const surname = request.data.surname;
-        if(!isNameValid)  errStr += "surname is not valid.";
+        if(!isNameValid(surname))  errStr += "surname is not valid.";
 
         const birthday = request.data.birthday;
-        if(!isBdayValid)  errStr += "birthday is not valid.";
+        if(!isBdayValid(birthday))  errStr += "birthday is not valid.";
 
         const street = request.data.street;
-        if(!isNameValid)  errStr += "street is not valid.";
+        if(!isNameValid(street))  errStr += "street is not valid.";
 
         const zipCode = request.data.zipCode;
-        if(!isNameValid)  errStr += "zipcode is not valid.";
+        if(!isNameValid(zipCode))  errStr += "zipcode is not valid.";
 
         const city =  request.data.city;
-        if(!isNameValid)  errStr += "city is not valid.";
+        if(!isNameValid(city))  errStr += "city is not valid.";
 
         if(errStr != "") throw new HttpsError(constants.ERR_CODE_INVALID_ARGUMENT, errStr);
 
@@ -59,7 +59,8 @@ exports.createUser = onCall(async (request) => {
             street: street,
             zipCode: zipCode,
             city: city,
-            createdAt: admin.firestore.FieldValue.serverTimestamp()
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
 
         logger.info("SUCCESS: create firestore-data");
@@ -131,5 +132,73 @@ function isZipCodeValid(zipCode) {
     const regex = /^[0-9]{5,7}/;
     if(!regex.test(zipCode)) return false;
 
+    return true;
+}
+
+exports.createSession = onCall(async (request) => {
+    try {
+        logger.info("BEGIN: createSession()");
+        if (request == null) {
+            throw new HttpsError(constants.ERR_CODE_NULL, 'request is null');
+        }
+    
+        const errStr = "";
+
+        const uid = request.data.uid;
+        if(!uid) errStr += "uid is null.";
+
+        const startTime = request.data.startTime;
+        if(!isStartTimeValid(startTime)) errStr += "startTime is not valid.";
+
+        const endTime = request.data.endTime;
+        if(!isEndTimeValid(startTime, endTime))  errStr += "endTime is not valid";
+
+        if(errStr != "") throw new HttpsError(constants.ERR_CODE_INVALID_ARGUMENT, errStr);
+
+        const sessionRef = admin.firestore().collection(constants.COLLECTION_USERS).doc(uid).collection(constants.COLLECTION_SESSIONS);
+
+
+        const querySnapshot = await sessionRef.where("startTime", ">=", startTime)
+            .where("startTime", "<=", endTime)
+            .limit(1)
+            .get();
+
+        if(!querySnapshot.empty) {
+            throw new HttpsError(constants.ERRO_CODE_SESSION_EXISTS, "Session already exists");
+        }
+        
+        logger.info("BEGIN: create firestore-data");
+        await sessionRef.set({
+            startTime: startTime,
+            endTime: endTime,
+            breaks: [],
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        logger.info("SUCCESS: create firestore-data");
+
+        return {
+            isSuccess: true
+        };
+    } catch (error) {
+        logger.error("ERROR: ", error);
+        throw new HttpsError(constants.ERR_CODE_INTERNAL, "Session could not created: ", error);
+    }
+  });
+
+//Is valid check
+function isStartTimeValid(startTime) {
+    if(!startTime) return false;
+    return true;
+}
+
+function isEndTimeValid(startTime, endTime) {
+    if(!endTime) return false;
+    if((startTime - endTime) < 0) return false;
+    return true;
+}
+
+function isBreaksValid(breaks) {
     return true;
 }
