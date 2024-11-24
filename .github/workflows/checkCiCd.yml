@@ -31,4 +31,4 @@ jobs:
         env:
           FB_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
         run: |
-          firebase deploy --only functions --token "$env:FB_TOKEN"
+          firebase deploy --only functions --token "$FB_TOKEN"
