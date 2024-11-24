@@ -1,7 +1,7 @@
 name: Firebase Functions CI/CD
 on:
   push:
-    branches: [ "5-modify-github-actions" ]
+    branches: [ "main" ]
   workflow_dispatch:
 jobs:
   build-and-deploy:
