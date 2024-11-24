@@ -16,14 +16,17 @@ jobs:
           node-version: "23.1.0"
 
       - name: Install dependencies
+        working-directory: ./functions
         run: |
           npm install -g firebase-tools
           npm install
 
       - name: Run Lint
+        working-directory: ./functions
         run: |
           npm run lint
       
       - name: Deploy Firebase Functions
+        working-directory: ./functions
         run: |
-          firebase deploy --only function --token $FIREBASE_AUTH_TOKENå
+          firebase deploy --only functions --token ${{ secrets.FIREBASE_AUTH_TOKEN }}
