@@ -29,4 +29,4 @@ jobs:
       - name: Deploy Firebase Functions
         working-directory: ./functions
         run: |
-          firebase deploy --only function --token $FIREBASE_AUTH_TOKENå
+          firebase deploy --only-functions --token $FIREBASE_AUTH_TOKENå
