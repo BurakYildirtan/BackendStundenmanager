@@ -28,5 +28,7 @@ jobs:
       
       - name: Deploy Firebase Functions
         working-directory: ./functions
+        env:
+          FB_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
         run: |
-          firebase deploy --only functions --token ${{ secrets.FIREBASE_AUTH_TOKEN }}
+          firebase deploy --only functions --token "$env:FB_TOKEN"
