@@ -3,6 +3,7 @@ const constants = require("./constants.json");
 const {onCall, HttpsError} = require("firebase-functions/v2/https");
 const { logger } = require("firebase-functions");
 const admin = require('firebase-admin');
+const { error } = require("firebase-functions/logger");
 
 admin.initializeApp();
 
@@ -14,7 +15,7 @@ exports.createUser = onCall(async (request) => {
             throw new HttpsError(constants.ERR_CODE_NULL, 'request is null');
         }
     
-        const errStr = "";
+        let errStr = "";
 
         const email = request.data.email;
         if(!isEmailValid(email)) errStr += "email is not valid.";
@@ -40,7 +41,10 @@ exports.createUser = onCall(async (request) => {
         const city =  request.data.city;
         if(!isNameValid(city))  errStr += "city is not valid.";
 
-        if(errStr != "") throw new HttpsError(constants.ERR_CODE_INVALID_ARGUMENT, errStr);
+        if(errStr != "") {
+            logger.error("ERROR: ", errStr);
+            throw new HttpsError(constants.ERR_CODE_INVALID_ARGUMENT, errStr);
+        }
 
         logger.info("BEGIN: create auth-user");
         const user = await admin.auth().createUser({
@@ -142,24 +146,33 @@ exports.createSession = onCall(async (request) => {
             throw new HttpsError(constants.ERR_CODE_NULL, 'request is null');
         }
     
-        const errStr = "";
+        let errStr = "";
 
         const uid = request.data.uid;
+        logger.debug("uid", uid);
         if(!uid) errStr += "uid is null.";
 
         const startTime = request.data.startTime;
+        logger.debug("startTime", startTime);
         if(!isStartTimeValid(startTime)) errStr += "startTime is not valid.";
 
         const endTime = request.data.endTime;
-        if(!isEndTimeValid(startTime, endTime))  errStr += "endTime is not valid";
+        logger.debug("endTime", endTime);
+        if(!isEndTimeValid(startTime, endTime))  errStr += "endTime is not valid.";
 
-        if(errStr != "") throw new HttpsError(constants.ERR_CODE_INVALID_ARGUMENT, errStr);
+        if(errStr != "") {
+            logger.error("ERROR: ", errStr);
+            throw new HttpsError(constants.ERR_CODE_INVALID_ARGUMENT, errStr);
+        }
+
+        /*Convert to firebase-timestamp */
+        startTimestamp = admin.firestore.Timestamp.fromMillis(startTime);
+        endTimestamp = admin.firestore.Timestamp.fromMillis(endTime);
 
         const sessionRef = admin.firestore().collection(constants.COLLECTION_USERS).doc(uid).collection(constants.COLLECTION_SESSIONS);
-
-
-        const querySnapshot = await sessionRef.where("startTime", ">=", startTime)
-            .where("startTime", "<=", endTime)
+    
+        const querySnapshot = await sessionRef.where("startTime", ">=", startTimestamp)
+            .where("endTime", "<=", startTimestamp)
             .limit(1)
             .get();
 
@@ -168,9 +181,9 @@ exports.createSession = onCall(async (request) => {
         }
         
         logger.info("BEGIN: create firestore-data");
-        await sessionRef.set({
-            startTime: startTime,
-            endTime: endTime,
+        await sessionRef.add({
+            startTime: startTimestamp,
+            endTime: endTimestamp,
             breaks: [],
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -195,10 +208,69 @@ function isStartTimeValid(startTime) {
 
 function isEndTimeValid(startTime, endTime) {
     if(!endTime) return false;
-    if((startTime - endTime) < 0) return false;
+    /*End time must be in after start time */
+    logger.debug("Result minus: ", (endTime - startTime));
+    if((endTime - startTime) < 0) return false;
     return true;
 }
 
-function isBreaksValid(breaks) {
-    return true;
-}
+exports.createBreak = onCall(async (request) => {
+    try {
+        logger.info("BEGIN: createBreak()");
+        if (request == null) {
+            throw new HttpsError(constants.ERR_CODE_NULL, 'request is null');
+        }
+    
+        let errStr = "";
+
+        const uid = request.data.uid;
+        logger.debug("uid", uid);
+        if(!uid) errStr += "uid is null.";
+
+        const documentId = request.data.documentId;
+        logger.debug("documentId", documentId);
+        if(!documentId) err += "documentId is null";
+
+        const startBreak = request.data.startTime;
+        logger.debug("startBreak", startBreak);
+        if(!isStartTimeValid(startBreak)) errStr += "startBreak is not valid.";
+
+        const endBreak = request.data.endTime;
+        logger.debug("endBreak", endBreak);
+        if(!isEndTimeValid(startBreak, endBreak))  errStr += "endBreak is not valid.";
+
+        if(errStr != "") {
+            logger.error("ERROR: ", errStr);
+            throw new HttpsError(constants.ERR_CODE_INVALID_ARGUMENT, errStr);
+        }
+
+        /*Convert to firebase-timestamp */
+        startBreakTimestamp = admin.firestore.Timestamp.fromMillis(startBreak);
+        endBreakTimestamp = admin.firestore.Timestamp.fromMillis(endBreak);
+
+        const docRef = admin.firestore()
+            .collection(constants.COLLECTION_USERS)
+            .doc(uid)
+            .collection(constants.COLLECTION_SESSIONS)
+            .doc(documentId);
+        
+        const newBreak = {
+            breakStart: startBreakTimestamp,
+            breakEnd: endBreakTimestamp,
+        };
+
+        logger.info("BEGIN: update firestore-data");
+        await docRef.update({
+            breaks: admin.firestore.FieldValue.arrayUnion(newBreak),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        logger.info("SUCCESS: update firestore-data");
+
+        return {
+            isSuccess: true
+        };
+    } catch (error) {
+        logger.error("ERROR: ", error);
+        throw new HttpsError(constants.ERR_CODE_INTERNAL, "Session could not created: ", error);
+    }
+  });
