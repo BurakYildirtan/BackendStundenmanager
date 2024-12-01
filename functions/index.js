@@ -33,10 +33,10 @@ exports.createUser = onCall(async (request) => {
         if(!isBdayValid(birthday))  errStr += "birthday is not valid.";
 
         const street = request.data.street;
-        if(!isNameValid(street))  errStr += "street is not valid.";
+        if(!isStreetValid(street))  errStr += "street is not valid.";
 
         const zipCode = request.data.zipCode;
-        if(!isNameValid(zipCode))  errStr += "zipcode is not valid.";
+        if(!isZipCodeValid(zipCode))  errStr += "zipcode is not valid.";
 
         const city =  request.data.city;
         if(!isNameValid(city))  errStr += "city is not valid.";
@@ -55,6 +55,7 @@ exports.createUser = onCall(async (request) => {
 
         logger.info("BEGIN: create firestore-data");
         const uid = user.uid;
+        const defRole = "user";
         const userRef = admin.firestore().collection('users').doc(uid);
         await userRef.set({
             name: name,
@@ -63,6 +64,7 @@ exports.createUser = onCall(async (request) => {
             street: street,
             zipCode: zipCode,
             city: city,
+            role: defRole,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
@@ -78,6 +80,7 @@ exports.createUser = onCall(async (request) => {
             street: street,
             zipCode: zipCode,
             city: city,
+            role: defRole,
         };
     } catch (error) {
         logger.error("ERROR: ", error);
@@ -106,7 +109,7 @@ function isPasswordValid(password) {
 function isNameValid(name) {
     if(!name) return false;
 
-    const regex = /^[a-zA-Z0-9äöüÄÖÜ]$/;
+    const regex = /^[a-zA-Z0-9äöüÄÖÜ]+$/;
     if(!regex.test(name)) return false;
 
     return true;
@@ -124,7 +127,7 @@ function isBdayValid(birthday) {
 function isStreetValid(street) {
     if(!street) return false;
 
-    const streetRegex = /^[a-zA-ZäöüÄÖÜß0-9.,\- ]+$/;
+    const regex = /^[a-zA-ZäöüÄÖÜß0-9.,\- ]+$/;
     if(!regex.test(street)) return false;
 
     return true;
