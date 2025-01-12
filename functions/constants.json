@@ -3,6 +3,8 @@
     "ERR_CODE_INVALID_ARGUMENT": "Invalid-Argument",
     "ERR_CODE_INTERNAL": "Internal",
     "COLLECTION_USERS": "users",
+    "COLLECTION_SHIFTS":"shifts",
     "COLLECTION_SESSIONS": "sessions",
-    "ERRO_CODE_SESSION_EXISTS":"Session-Exist"
+    "ERRO_CODE_SESSION_EXISTS":"Session-Exist",
+    "ERR_CODE_SHIFT_EXISTS":"Shift-Exist"
 }

@@ -3,7 +3,7 @@ const constants = require("./constants.json");
 const {onCall, HttpsError} = require("firebase-functions/v2/https");
 const { logger } = require("firebase-functions");
 const admin = require('firebase-admin');
-const { error } = require("firebase-functions/logger");
+const { error, log } = require("firebase-functions/logger");
 
 admin.initializeApp();
 
@@ -277,3 +277,77 @@ exports.createBreak = onCall(async (request) => {
         throw new HttpsError(constants.ERR_CODE_INTERNAL, "Session could not created: ", error);
     }
   });
+
+exports.createShift = onCall(async (request) => {
+    try {
+        logger.info("BEGIN: createShift()");
+        if (request == null) {
+            throw new HttpsError(constants.ERR_CODE_NULL, 'request is null');
+        }
+    
+        let errStr = "";
+
+        const startDate = request.data.startDate;
+        logger.debug("startDate", startDate);
+        if(!isStartTimeValid(startDate)) errStr += "startDate is not valid.";
+
+        const endDate = request.data.endDate;
+        logger.debug("endDate", endDate);
+        if(!isEndTimeValid(startDate, endDate)) errStr += "startDate is not valid.";
+
+        const morningShift = request.data.morningShift;
+        if(!isListValid(morningShift)) errStr += "morningShift is empty.";
+
+        const lateShift = request.data.lateShift;
+        if(!isListValid(lateShift)) errStr += "lateShift is empty.";
+
+        const nightShift = request.data.nightShift;
+        if(!isListValid(nightShift)) errStr += "nightShift is empty.";
+
+        if(errStr != "") {
+            logger.error("ERROR: ", errStr);
+            throw new HttpsError(constants.ERR_CODE_INVALID_ARGUMENT, errStr);
+        }
+
+        const shiftCollection = admin.firestore()
+        .collection(constants.COLLECTION_SHIFTS);
+
+        /*Convert to firebase-timestamp */
+        startDateTimestamp = admin.firestore.Timestamp.fromMillis(startDate);
+        endDateTimestamp = admin.firestore.Timestamp.fromMillis(endDate);
+
+        const querySnapshot = await shiftCollection.where("startDate", "==", startDateTimestamp)
+        .where("endDate", "==", endDateTimestamp)
+        .limit(1)
+        .get();
+
+        
+        if(querySnapshot == null || !querySnapshot.empty) {
+            throw new HttpsError(constants.ERR_CODE_SHIFT_EXISTS, "Shift for week exists.");
+        }
+
+        logger.info("BEGIN: create firestore-data");
+        await shiftCollection.add({
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            startDate: startDateTimestamp,
+            endDate: endDateTimestamp,
+            morningShift: morningShift,
+            lateShift: lateShift,
+            endShift: nightShift,
+        });
+        logger.info("SUCCESS: create firestore-data");
+
+        return {
+            isSuccess: true
+        };
+    } catch (error) {
+        logger.error("ERROR: ", error);
+        throw new HttpsError(constants.ERR_CODE_INTERNAL, "Shift could not created: ", error);
+    }
+});  
+
+function isListValid(testList) {
+    if(!testList) return false;
+    return true;
+}
