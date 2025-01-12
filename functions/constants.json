@@ -4,7 +4,11 @@
     "ERR_CODE_INTERNAL": "Internal",
     "COLLECTION_USERS": "users",
     "COLLECTION_SHIFTS":"shifts",
+    "COLLECTION_ILLNESS":"illness",
+    "COLLECTION_VACATION":"vacation",
     "COLLECTION_SESSIONS": "sessions",
     "ERRO_CODE_SESSION_EXISTS":"Session-Exist",
-    "ERR_CODE_SHIFT_EXISTS":"Shift-Exist"
+    "ERR_CODE_SHIFT_EXISTS":"Shift-Exist",
+    "STATUS_CHECK":"check",
+    "STATUS_APPROVED":"approved"
 }

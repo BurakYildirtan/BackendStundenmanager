@@ -351,3 +351,129 @@ function isListValid(testList) {
     if(!testList) return false;
     return true;
 }
+
+exports.createVacation = onCall(async (request) => {
+    try {
+        logger.info("BEGIN: createVacation()");
+        if (request == null) {
+            throw new HttpsError(constants.ERR_CODE_NULL, 'request is null');
+        }
+    
+        let errStr = "";
+
+        const uid = request.data.uid;
+        logger.debug("uid", uid);
+        if(!uid) errStr += "uid is null.";
+
+        const startDate = request.data.startDate;
+        logger.debug("startDate", startDate);
+        if(!isStartTimeValid(startDate)) errStr += "startBreak is not valid.";
+
+        const endDate = request.data.endDate;
+        logger.debug("endDate", endDate);
+        if(!isEndTimeValid(startDate, endDate))  errStr += "endBreak is not valid.";
+
+        if(errStr != "") {
+            logger.error("ERROR: ", errStr);
+            throw new HttpsError(constants.ERR_CODE_INVALID_ARGUMENT, errStr);
+        }
+
+        const docRef = admin.firestore()
+        .collection(constants.COLLECTION_USERS)
+        .doc(uid)
+        .collection(constants.COLLECTION_VACATION);
+
+        /*Convert to firebase-timestamp */
+        startDateTimestamp = admin.firestore.Timestamp.fromMillis(startDate);
+        endDateTimestamp = admin.firestore.Timestamp.fromMillis(endDate);
+
+        const querySnapshot = await docRef.where("startDate", "==", startDateTimestamp)
+        .where("endDate", "==", endDateTimestamp)
+        .limit(1)
+        .get();
+
+        if(querySnapshot == null || !querySnapshot.empty) {
+            throw new HttpsError(constants.ERR_CODE_SHIFT_EXISTS, "Vacation exists.");
+        }
+
+        logger.info("BEGIN: create firestore-data");
+        await docRef.add({
+            approval: constants.STATUS_CHECK,
+            breakStart: startBreakTimestamp,
+            breakEnd: endBreakTimestamp,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        logger.info("SUCCESS: update firestore-data");
+
+        return {
+            isSuccess: true
+        };
+    } catch (error) {
+        logger.error("ERROR: ", error);
+        throw new HttpsError(constants.ERR_CODE_INTERNAL, "Vacation could not created: ", error);
+    }
+  });
+
+  exports.createIllness = onCall(async (request) => {
+    try {
+        logger.info("BEGIN: createIllness()");
+        if (request == null) {
+            throw new HttpsError(constants.ERR_CODE_NULL, 'request is null');
+        }
+    
+        let errStr = "";
+
+        const uid = request.data.uid;
+        logger.debug("uid", uid);
+        if(!uid) errStr += "uid is null.";
+
+        const startDate = request.data.startDate;
+        logger.debug("startDate", startDate);
+        if(!isStartTimeValid(startDate)) errStr += "startBreak is not valid.";
+
+        const endDate = request.data.endDate;
+        logger.debug("endDate", endDate);
+        if(!isEndTimeValid(startDate, endDate))  errStr += "endBreak is not valid.";
+
+        if(errStr != "") {
+            logger.error("ERROR: ", errStr);
+            throw new HttpsError(constants.ERR_CODE_INVALID_ARGUMENT, errStr);
+        }
+
+        const docRef = admin.firestore()
+        .collection(constants.COLLECTION_USERS)
+        .doc(uid)
+        .collection(constants.COLLECTION_ILLNESS);
+
+        /*Convert to firebase-timestamp */
+        startDateTimestamp = admin.firestore.Timestamp.fromMillis(startDate);
+        endDateTimestamp = admin.firestore.Timestamp.fromMillis(endDate);
+
+        const querySnapshot = await docRef.where("startDate", "==", startDateTimestamp)
+        .where("endDate", "==", endDateTimestamp)
+        .limit(1)
+        .get();
+
+        if(querySnapshot == null || !querySnapshot.empty) {
+            throw new HttpsError(constants.ERR_CODE_SHIFT_EXISTS, "Illness exists.");
+        }
+
+        logger.info("BEGIN: create firestore-data");
+        await docRef.add({
+            approval: constants.STATUS_APPROVED,
+            breakStart: startBreakTimestamp,
+            breakEnd: endBreakTimestamp,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        logger.info("SUCCESS: update firestore-data");
+
+        return {
+            isSuccess: true
+        };
+    } catch (error) {
+        logger.error("ERROR: ", error);
+        throw new HttpsError(constants.ERR_CODE_INTERNAL, "Illness could not created: ", error);
+    }
+  });
