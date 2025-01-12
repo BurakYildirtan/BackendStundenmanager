@@ -399,8 +399,8 @@ exports.createVacation = onCall(async (request) => {
         logger.info("BEGIN: create firestore-data");
         await docRef.add({
             approval: constants.STATUS_CHECK,
-            breakStart: startBreakTimestamp,
-            breakEnd: endBreakTimestamp,
+            breakStart: startDateTimestamp,
+            breakEnd: endDateTimestamp,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
@@ -462,8 +462,8 @@ exports.createVacation = onCall(async (request) => {
         logger.info("BEGIN: create firestore-data");
         await docRef.add({
             approval: constants.STATUS_APPROVED,
-            breakStart: startBreakTimestamp,
-            breakEnd: endBreakTimestamp,
+            breakStart: startDateTimestamp,
+            breakEnd: endDateTimestamp,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
