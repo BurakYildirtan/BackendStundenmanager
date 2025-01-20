@@ -43,7 +43,7 @@ exports.createUser = onCall(async (request) => {
 
         if(errStr != "") {
             logger.error("ERROR: ", errStr);
-            throw new HttpsError(constants.ERR_CODE_INVALID_ARGUMENT, errStr);
+            throw new HttpsError(constants.ERR_CODE_INVALID_ARGUMENT, "Validation error: ${errStr}");
         }
 
         logger.info("BEGIN: create auth-user");
